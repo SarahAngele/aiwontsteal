@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIWontSteal — Prototype</title>
+<meta name="description" content="And you… what AI won't steal from you? Join the human club — no robots allowed.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://aiwontsteal.com/">
+<meta property="og:site_name" content="AI won't steal">
+<meta property="og:title" content="AI won't steal">
+<meta property="og:description" content="And you… what AI won't steal from you? Join the human club — no robots allowed.">
+<meta property="og:image" content="https://aiwontsteal.com/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI won't steal">
+<meta name="twitter:description" content="And you… what AI won't steal from you? Join the human club — no robots allowed.">
+<meta name="twitter:image" content="https://aiwontsteal.com/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Noto+Sans+Arabic:wght@500;600&family=Noto+Sans+JP:wght@500;600&family=Noto+Sans+KR:wght@500;600&family=Noto+Sans+SC:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+  :root{
+    --paper:#F1ECE0;
+    --ink:#2C2A24;
+    --ink-soft:#5B584E;
+    --accent:#D85A30;
+    --white:#FFFFFF;
+    --heart:#D8305A;
+    --hl1:rgba(255,235,59,0.55);
+    --hl2:rgba(255,64,180,0.38);
+    --hl3:rgba(70,255,150,0.42);
+    --hl4:rgba(64,190,255,0.42);
+    --hl5:rgba(255,140,40,0.42);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    overflow-x:hidden;
+  }
+  body{
+    font-family:'Inter',sans-serif;
+    background:
+      radial-gradient(circle at 8px 8px, rgba(0,0,0,0.045) 1px, transparent 1.5px) 0 0/16px 16px,
+      var(--paper);
+    color:var(--ink);
+  }
+
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:150;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px 16px;
+    padding:16px 20px;
+    background:var(--paper);
+    border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  @media(max-width:600px){ .topbar{ padding:14px 16px; } }
+  .brand-group{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; min-width:0; }
+  @media(max-width:480px){ .tagline{ display:none; } }
+  .brand{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:23px;
+    letter-spacing:-0.01em;
+    cursor:pointer;
+    background:none;
+    border:none;
+    color:var(--ink);
+    padding:0;
+    line-height:1;
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+  }
+  .brand i{ font-size:0.85em; }
+  .tagline{ font-size:12.5px; color:var(--ink-soft); margin:0; }
+  .add-btn{
+    width:44px; height:44px;
+    border-radius:50%;
+    background:var(--accent);
+    color:var(--white);
+    border:none;
+    font-size:24px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:transform .15s ease;
+    flex-shrink:0;
+    box-shadow:0 3px 10px rgba(216,90,48,0.4);
+  }
+  .add-btn:hover{ transform:scale(1.08); }
+
+  .wall{
+    position:relative;
+    width:100%;
+    padding-top:10px;
+  }
+
+  .note{
+    position:absolute;
+    width:190px;
+    background:var(--white);
+    padding:18px 16px 12px;
+    border-radius:2px;
+    box-shadow:0 3px 9px rgba(0,0,0,0.15);
+    transition:box-shadow .15s ease;
+  }
+  .note::before{
+    content:'';
+    position:absolute;
+    top:-9px; left:50%;
+    transform:translateX(-50%) rotate(-3deg);
+    width:34px; height:15px;
+    background:rgba(0,0,0,0.06);
+  }
+  .note.hovered{box-shadow:0 12px 26px rgba(0,0,0,0.25);}
+  @media(max-width:900px){ .note{width:170px;} }
+  @media(max-width:600px){ .note{width:150px; padding:14px 12px 10px;} }
+  @media(max-width:360px){ .note{width:130px; padding:12px 10px 8px;} }
+
+  .note p.quote{
+    margin:0 0 10px;
+    font-family:'Caveat',cursive;
+    font-weight:600;
+    font-size:20px;
+    line-height:1.35;
+  }
+  .note p.quote.script-ar{ font-family:'Noto Sans Arabic',sans-serif; font-size:15px; font-weight:600; line-height:1.7; }
+  .note p.quote.script-jp{ font-family:'Noto Sans JP',sans-serif; font-size:13px; font-weight:500; line-height:1.75; }
+  .note p.quote.script-kr{ font-family:'Noto Sans KR',sans-serif; font-size:14px; font-weight:500; line-height:1.7; }
+  .note p.quote.script-sc{ font-family:'Noto Sans SC',sans-serif; font-size:15px; font-weight:500; line-height:1.7; }
+
+  mark.hl{
+    color:var(--ink);
+    padding:0.1em 0.28em;
+    border-radius:3px;
+    box-decoration-break:clone;
+    -webkit-box-decoration-break:clone;
+  }
+  .hl1{background:var(--hl1);}
+  .hl2{background:var(--hl2);}
+  .hl3{background:var(--hl3);}
+  .hl4{background:var(--hl4);}
+  .hl5{background:var(--hl5);}
+
+  .note p.who{
+    font-size:11.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin:0 0 2px;
+  }
+  .note.new{animation:pop .35s ease;}
+  @keyframes pop{from{transform:scale(0.85) !important; opacity:0;} to{opacity:1;}}
+
+  .note-actions{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:8px;
+    padding-top:6px;
+    border-top:1px solid rgba(0,0,0,0.07);
+  }
+  .like-btn{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-size:12px;
+    color:var(--ink-soft);
+    padding:8px 6px;
+    margin:-6px 0;
+    font-family:inherit;
+    min-height:32px;
+    touch-action:manipulation;
+  }
+  .like-btn .heart{ font-size:14px; }
+  .like-btn.liked{ color:var(--heart); }
+  .like-btn.liked .heart{ color:var(--heart); }
+  .share-btn{
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-size:14px;
+    color:var(--ink-soft);
+    padding:8px 8px;
+    margin:-6px -4px;
+    min-width:32px;
+    min-height:32px;
+    touch-action:manipulation;
+  }
+  .like-btn:hover, .share-btn:hover{ opacity:0.65; }
+
+  .overlay{
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    inset:0;
+    background:rgba(44,42,36,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:300;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--white);
+    border-radius:16px;
+    padding:28px;
+    width:100%;
+    max-width:420px;
+    max-height:90vh;
+    max-height:90dvh;
+    overflow-y:auto;
+    position:relative;
+    -webkit-overflow-scrolling:touch;
+  }
+  .modal h2{font-size:19px; margin:0 0 4px;}
+  .modal .sub{font-size:13px; color:var(--ink-soft); margin:0 0 20px;}
+  .modal-close{
+    position:absolute;
+    top:16px; right:16px;
+    border:none;
+    background:none;
+    font-size:18px;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    margin-bottom:5px;
+    color:var(--ink-soft);
+  }
+  .field input, .field textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid #E4DCC6;
+    border-radius:8px;
+    font-family:inherit;
+    font-size:16px;
+  }
+  .field textarea{resize:vertical; min-height:64px;}
+  .field textarea.invalid, .field input.invalid{ border-color:#D8305A; }
+  .field .optional{ font-weight:400; color:var(--ink-soft); opacity:0.7; }
+  .field .required{ color:#D8305A; }
+  .field-error{ font-size:12px; color:#D8305A; margin:6px 0 0; }
+  .counter{font-size:11px; color:var(--ink-soft); text-align:right; margin-top:3px;}
+  .emoji-row{ display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+  .emoji-btn{
+    border:1px solid rgba(0,0,0,0.1);
+    background:var(--white);
+    border-radius:6px;
+    font-size:16px;
+    padding:4px 6px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .emoji-btn:hover{ background:var(--paper); }
+  .btn{
+    width:100%;
+    background:var(--ink);
+    color:var(--white);
+    border:none;
+    padding:12px 20px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:inherit;
+    margin-top:6px;
+  }
+  .btn:hover{opacity:0.9;}
+
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:var(--white);
+    padding:12px 20px;
+    border-radius:8px;
+    font-size:14px;
+    opacity:0;
+    pointer-events:none;
+    transition:all .25s ease;
+    z-index:400;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand-group">
+    <button class="brand" id="goWall"><i class="ti ti-edit" aria-hidden="true"></i> AI won't steal</button>
+    <p class="tagline">Join the human club — no robots allowed.</p>
+  </div>
+  <button class="add-btn" id="openAdd" aria-label="Add your post-it">+</button>
+</header>
+
+<div class="wall" id="wall"></div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="modal-close" id="closeModal">✕</button>
+    <h2>Add your post-it</h2>
+    <p class="sub">No account needed. Write in your own language. 30 seconds.</p>
+    <div class="field">
+      <label>First name <span class="optional">(optional)</span></label>
+      <input type="text" id="inName" placeholder="Léa" maxlength="30">
+    </div>
+    <div class="field">
+      <label>City, country <span class="optional">(optional)</span></label>
+      <input type="text" id="inCity" placeholder="Lyon, France" maxlength="40">
+    </div>
+    <div class="field">
+      <label>What AI won't take from you <span class="required">*</span></label>
+      <textarea id="inQuote" maxlength="90" placeholder="This moment that belongs only to me."></textarea>
+      <div class="counter"><span id="charCount">0</span>/90</div>
+      <div class="emoji-row" id="emojiRow"></div>
+      <p class="field-error" id="quoteError" hidden>Write something first — even one word or an emoji.</p>
+    </div>
+    <button class="btn" id="publishBtn">Pin to the wall</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">Saved ✓</div>
+
+<script>
+  const wall = document.getElementById('wall');
+  const hlClasses = ['hl1','hl2','hl3','hl4','hl5'];
+
+  const toast = document.getElementById('toast');
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(()=> toast.classList.remove('show'), 2400);
+  }
+
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]] = [arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  // assigns an hl colour to a note so it never matches an already-placed
+  // note sitting within `threshold` px of it (center-to-center distance)
+  function assignColor(note, left, top, w, h, placed, threshold){
+    const cx = left + w/2, cy = top + h/2;
+    const forbidden = new Set();
+    placed.forEach(p=>{
+      const dx = Math.abs(p.cx - cx), dy = Math.abs(p.cy - cy);
+      if(dx < threshold && dy < threshold) forbidden.add(p.hl);
+    });
+    let choices = hlClasses.filter(c=>!forbidden.has(c));
+    if(choices.length === 0) choices = hlClasses;
+    const hl = choices[Math.floor(Math.random()*choices.length)];
+    note.querySelector('mark').classList.remove(...hlClasses);
+    note.querySelector('mark').classList.add(hl);
+    placed.push({cx, cy, hl});
+    return hl;
+  }
+
+  // ---- branded story-format share image (1080x1920) ----
+  const HL_COLORS = {
+    hl1:'rgba(255,235,59,0.55)', hl2:'rgba(255,64,180,0.38)',
+    hl3:'rgba(70,255,150,0.42)', hl4:'rgba(64,190,255,0.42)', hl5:'rgba(255,140,40,0.42)'
+  };
+
+  function quoteFontFor(note){
+    const q = note.querySelector('.quote');
+    if(q.classList.contains('script-ar')) return {family:"'Noto Sans Arabic', sans-serif", weight:'600', rtl:true, size:56, byChar:false};
+    if(q.classList.contains('script-jp')) return {family:"'Noto Sans JP', sans-serif", weight:'500', rtl:false, size:46, byChar:true};
+    if(q.classList.contains('script-kr')) return {family:"'Noto Sans KR', sans-serif", weight:'500', rtl:false, size:50, byChar:true};
+    if(q.classList.contains('script-sc')) return {family:"'Noto Sans SC', sans-serif", weight:'500', rtl:false, size:52, byChar:true};
+    return {family:"'Caveat', cursive", weight:'700', rtl:false, size:64, byChar:false};
+  }
+
+  function wrapCanvasText(ctx, text, maxWidth, byChar){
+    const units = byChar ? Array.from(text) : text.split(' ');
+    const sep = byChar ? '' : ' ';
+    const lines = [];
+    let current = '';
+    units.forEach(u=>{
+      const test = current ? current + sep + u : u;
+      if(ctx.measureText(test).width > maxWidth && current){
+        lines.push(current);
+        current = u;
+      } else {
+        current = test;
+      }
+    });
+    if(current) lines.push(current);
+    return lines;
+  }
+
+  async function buildShareCanvas(note){
+    await document.fonts.ready;
+    try{
+      await Promise.all([
+        document.fonts.load("700 60px 'Space Grotesk'"),
+        document.fonts.load("700 64px 'Caveat'"),
+        document.fonts.load("600 40px 'Inter'")
+      ]);
+    }catch(e){}
+
+    const W = 1080, H = 1350;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#F1ECE0';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(0,0,0,0.045)';
+    for(let y=24; y<H; y+=48){
+      for(let x=24; x<W; x+=48){
+        ctx.beginPath();
+        ctx.arc(x, y, 1.6, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.save();
+    ctx.translate(W/2, 150);
+    ctx.rotate(-0.035);
+    ctx.fillStyle = '#2E6FF2';
+    ctx.font = "700 78px 'Caveat', cursive";
+    ctx.fillText('And you…', 0, 0);
+    ctx.restore();
+
+    ctx.fillStyle = '#2C2A24';
+    ctx.font = "700 40px 'Space Grotesk', sans-serif";
+    ctx.fillText("what AI won't steal from you?", W/2, 250);
+
+    const hlClass = hlClasses.find(c => note.querySelector('mark').classList.contains(c)) || 'hl1';
+    const quote = note.querySelector('mark').textContent;
+    const who = note.querySelector('.who').textContent;
+    const qf = quoteFontFor(note);
+
+    const cardX = 90, cardW = W - 180;
+    const padX = 80;
+    const innerW = cardW - padX*2;
+
+    // fixed card zone: fills the space between the header and the footer,
+    // so short quotes don't leave two big empty gaps top and bottom
+    const cardY = 300;
+    const cardH = H - 260 - cardY;
+
+    ctx.font = `${qf.weight} ${qf.size}px ${qf.family}`;
+    const lines = wrapCanvasText(ctx, quote, innerW, qf.byChar);
+    const lineHeight = qf.size * 1.4;
+    const quoteBlockH = lines.length * lineHeight;
+    const contentH = quoteBlockH + 70;
+    const contentStartY = cardY + (cardH - contentH) / 2;
+
+    ctx.save();
+    ctx.translate(cardX + cardW/2, cardY + cardH/2);
+    ctx.rotate(-0.03);
+    ctx.translate(-(cardX + cardW/2), -(cardY + cardH/2));
+
+    ctx.shadowColor = 'rgba(0,0,0,0.18)';
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetY = 10;
+    ctx.fillStyle = '#FFFFFF';
+    roundRect(ctx, cardX, cardY, cardW, cardH, 6);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+
+    ctx.textAlign = qf.rtl ? 'right' : 'left';
+    ctx.direction = qf.rtl ? 'rtl' : 'ltr';
+    const textX = qf.rtl ? cardX + cardW - padX : cardX + padX;
+    let ty = contentStartY + qf.size*0.8;
+    ctx.font = `${qf.weight} ${qf.size}px ${qf.family}`;
+    lines.forEach(line=>{
+      const w = ctx.measureText(line).width;
+      const hlX = qf.rtl ? textX - w - 10 : textX - 10;
+      ctx.fillStyle = HL_COLORS[hlClass];
+      roundRect(ctx, hlX, ty - qf.size*0.78, w + 20, qf.size*1.05, 6);
+      ctx.fill();
+      ctx.fillStyle = '#2C2A24';
+      ctx.fillText(line, textX, ty);
+      ty += lineHeight;
+    });
+
+    ctx.direction = 'ltr';
+    ctx.textAlign = 'left';
+    ctx.font = "600 32px 'Inter', sans-serif";
+    ctx.fillStyle = '#5B584E';
+    ctx.fillText(who, cardX + padX, ty + 26);
+    ctx.restore();
+
+    ctx.textAlign = 'center';
+    ctx.font = "600 34px 'Inter', sans-serif";
+    ctx.fillStyle = '#5B584E';
+    ctx.fillText('Join us', W/2, H - 150);
+    ctx.font = "700 38px 'Space Grotesk', sans-serif";
+    ctx.fillStyle = '#2C2A24';
+    ctx.fillText('aiwontsteal.com', W/2, H - 90);
+
+    return canvas;
+  }
+
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  async function shareNote(note){
+    showToast('Preparing your image…');
+    let canvas;
+    try{
+      canvas = await buildShareCanvas(note);
+    }catch(err){
+      showToast("Couldn't generate the image. Try again.");
+      return;
+    }
+    canvas.toBlob(async (blob)=>{
+      if(!blob){ showToast("Couldn't generate the image. Try again."); return; }
+      const file = new File([blob], 'aiwontsteal.png', { type:'image/png' });
+      const quote = note.querySelector('mark').textContent;
+      const shareText = `"${quote}" — via aiwontsteal.com`;
+
+      if(navigator.canShare && navigator.canShare({ files:[file] })){
+        try{
+          await navigator.share({ files:[file], text: shareText, title: "AI won't steal" });
+          return;
+        }catch(err){
+          if(err && err.name === 'AbortError') return;
+        }
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'aiwontsteal-post-it.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=> URL.revokeObjectURL(url), 4000);
+      showToast('Image saved — open WhatsApp, Instagram or Facebook and add it to your story');
+    }, 'image/png');
+  }
+
+  // adds a heart/like counter and a share button to a post-it
+  function addReactions(note){
+    if(note.querySelector('.note-actions')) return;
+    const bar = document.createElement('div');
+    bar.className = 'note-actions';
+
+    const likeBtn = document.createElement('button');
+    likeBtn.type = 'button';
+    likeBtn.className = 'like-btn';
+    const initial = 0;
+    likeBtn.dataset.count = initial;
+    likeBtn.dataset.liked = 'false';
+    likeBtn.innerHTML = `<span class="heart">♡</span><span class="count">${initial}</span>`;
+    likeBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const liked = likeBtn.dataset.liked === 'true';
+      let count = parseInt(likeBtn.dataset.count, 10) + (liked ? -1 : 1);
+      likeBtn.dataset.liked = String(!liked);
+      likeBtn.dataset.count = count;
+      likeBtn.classList.toggle('liked', !liked);
+      likeBtn.querySelector('.heart').textContent = liked ? '♡' : '♥';
+      likeBtn.querySelector('.count').textContent = count;
+    });
+
+    const shareBtn = document.createElement('button');
+    shareBtn.type = 'button';
+    shareBtn.className = 'share-btn';
+    shareBtn.textContent = '⤴';
+    shareBtn.setAttribute('aria-label', 'Share this post-it');
+    shareBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      shareNote(note);
+    });
+
+    bar.appendChild(likeBtn);
+    bar.appendChild(shareBtn);
+    note.appendChild(bar);
+  }
+
+  // ---- sunflower spiral placement: first post-it at the center, each new
+  // one lands a bit further out at the golden angle, so the wall fills
+  // evenly outward before a new denser "layer" restarts from the center ----
+  const GOLDEN_ANGLE = 2.399963;
+  let noteCounter = 0;
+  const NOTE_W_REF = 190, NOTE_H_REF = 160;
+
+  function sizeWall(){
+    const header = document.querySelector('.topbar');
+    const headerH = header ? header.offsetHeight : 80;
+    const h = Math.max(window.innerHeight - headerH, 560);
+    wall.style.height = h + 'px';
+  }
+
+  function layerSizeFor(wallW, wallH){
+    const maxRadius = Math.min(wallW, wallH) / 2 * 0.92;
+    const area = Math.PI * maxRadius * maxRadius;
+    const noteArea = NOTE_W_REF * NOTE_H_REF * 0.55;
+    return Math.max(10, Math.floor(area / noteArea));
+  }
+
+  function spiralPosition(index, noteW, noteH){
+    const wallW = wall.clientWidth;
+    const wallH = wall.clientHeight || wall.offsetHeight || 700;
+    const centerX = wallW / 2, centerY = wallH / 2;
+    const maxRadius = Math.min(wallW, wallH) / 2 * 0.92;
+    const layerSize = layerSizeFor(wallW, wallH);
+    const posInLayer = index % layerSize;
+    const radius = maxRadius * Math.sqrt((posInLayer + 1) / layerSize);
+    const angle = index * GOLDEN_ANGLE;
+    return {
+      left: centerX + radius * Math.cos(angle) - noteW / 2,
+      top: centerY + radius * Math.sin(angle) - noteH / 2
+    };
+  }
+
+  function placeNote(note, isNew){
+    const index = noteCounter++;
+    note.dataset.spiralIndex = index;
+    if(note.dataset.jitterX === undefined){
+      note.dataset.jitterX = (Math.random()*24 - 12).toFixed(1);
+      note.dataset.jitterY = (Math.random()*24 - 12).toFixed(1);
+      note.dataset.rot = (Math.random()*16 - 8).toFixed(1);
+    }
+    applyPosition(note);
+    const z = 10 + index;
+    note.style.zIndex = z;
+    const bringToFront = ()=>{
+      note.classList.add('hovered');
+      note.style.zIndex = 999;
+      note.style.transform = 'rotate(0deg) scale(1.06)';
+    };
+    const sendToBack = ()=>{
+      note.classList.remove('hovered');
+      note.style.zIndex = z;
+      note.style.transform = note.dataset.baseTransform;
+    };
+    note.onmouseenter = bringToFront;
+    note.onmouseleave = sendToBack;
+    // touch devices have no hover: tapping brings it forward for a few
+    // seconds so the text can be read, then it settles back automatically
+    note.addEventListener('click', ()=>{
+      bringToFront();
+      clearTimeout(note._settleTimer);
+      note._settleTimer = setTimeout(sendToBack, 3000);
+    });
+
+    const nW = note.offsetWidth || NOTE_W_REF, nH = note.offsetHeight || NOTE_H_REF;
+    const left = parseFloat(note.style.left), top = parseFloat(note.style.top);
+    const threshold = Math.max(nW, NOTE_W_REF) * 0.9;
+    wall._placed = wall._placed || [];
+    assignColor(note, left, top, nW, nH, wall._placed, threshold);
+  }
+
+  function applyPosition(note){
+    const index = parseInt(note.dataset.spiralIndex, 10);
+    const nW = note.offsetWidth || NOTE_W_REF, nH = note.offsetHeight || NOTE_H_REF;
+    const pos = spiralPosition(index, nW, nH);
+    const left = pos.left + parseFloat(note.dataset.jitterX);
+    const top = pos.top + parseFloat(note.dataset.jitterY);
+    note.style.left = Math.round(left) + 'px';
+    note.style.top = Math.round(top) + 'px';
+    note.dataset.baseTransform = `rotate(${note.dataset.rot}deg)`;
+    note.style.transform = note.dataset.baseTransform;
+  }
+
+  function repositionAll(){
+    sizeWall();
+    Array.from(wall.querySelectorAll('.note')).forEach(applyPosition);
+  }
+
+  sizeWall();
+  // mobile browsers fire 'resize' constantly as the address bar shows/hides
+  // while scrolling — only reposition on a real size change (rotation,
+  // window resize), not those small height wobbles, so post-its don't
+  // jump around while someone is just scrolling
+  let lastW = window.innerWidth, lastH = window.innerHeight;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(window._rt);
+    window._rt = setTimeout(()=>{
+      const wChanged = window.innerWidth !== lastW;
+      const hChanged = Math.abs(window.innerHeight - lastH) > 150;
+      if(wChanged || hChanged){
+        lastW = window.innerWidth; lastH = window.innerHeight;
+        repositionAll();
+      }
+    }, 200);
+  });
+
+  const overlay = document.getElementById('overlay');
+  const openAdd = document.getElementById('openAdd');
+  const closeModal = document.getElementById('closeModal');
+  const publishBtn = document.getElementById('publishBtn');
+  const inQuote = document.getElementById('inQuote');
+  const charCount = document.getElementById('charCount');
+
+  function openModal(){
+    inQuote.value = '';
+    charCount.textContent = '0';
+    setQuoteError(null);
+    overlay.classList.add('show');
+  }
+
+  openAdd.addEventListener('click', openModal);
+  closeModal.addEventListener('click', ()=> overlay.classList.remove('show'));
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) overlay.classList.remove('show'); });
+  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') overlay.classList.remove('show'); });
+
+  document.getElementById('goWall').addEventListener('click', ()=>{
+    window.scrollTo({ top:0, behavior:'smooth' });
+  });
+
+  inQuote.addEventListener('input', ()=> charCount.textContent = inQuote.value.length);
+
+  // ---- emoji picker ----
+  const EMOJIS = ['😊','❤️','🙏','🌿','☕','🎶','🌙','😂','🥹','✨','🐶','☀️'];
+  const emojiRow = document.getElementById('emojiRow');
+  EMOJIS.forEach(e=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'emoji-btn';
+    b.textContent = e;
+    b.addEventListener('click', ()=>{
+      const start = inQuote.selectionStart ?? inQuote.value.length;
+      const end = inQuote.selectionEnd ?? inQuote.value.length;
+      inQuote.value = inQuote.value.slice(0, start) + e + inQuote.value.slice(end);
+      inQuote.focus();
+      inQuote.selectionStart = inQuote.selectionEnd = start + e.length;
+      charCount.textContent = inQuote.value.length;
+    });
+    emojiRow.appendChild(b);
+  });
+
+  // ---- basic language filter ----
+  // NOTE: this is a first line of defense only — a client-side denylist can be
+  // bypassed trivially (typos, other languages, leetspeak) and can never catch
+  // everything, especially anything CSAM-adjacent. Before a real public launch
+  // this needs: a moderation queue (posts held until reviewed), a report/flag
+  // button on every post-it, and ideally a moderation API (e.g. OpenAI's free
+  // moderation endpoint) checking submissions server-side. Any CSAM content
+  // must also be reported to the relevant authority (e.g. NCMEC in the US) —
+  // that is a legal obligation, not just a moderation nicety.
+  const BLOCKED_TERMS = ['porn','xxx','nude','sex','fuck','nigger','faggot'];
+  function isBlocked(text){
+    const t = text.toLowerCase();
+    return BLOCKED_TERMS.some(term => t.includes(term));
+  }
+
+  const quoteError = document.getElementById('quoteError');
+  function setQuoteError(msg){
+    if(msg){
+      quoteError.textContent = msg;
+      quoteError.hidden = false;
+      inQuote.classList.add('invalid');
+    } else {
+      quoteError.hidden = true;
+      inQuote.classList.remove('invalid');
+    }
+  }
+  inQuote.addEventListener('input', ()=> setQuoteError(null));
+
+  // ---- shared note builder (used for notes loaded from the server and for
+  // the one just published) so the wall renders identically either way ----
+  function buildNoteElement({ quote, name, city, country, createdAt, isNew }){
+    const cityOnly = city || '';
+    const countryOnly = country || '';
+    const cityRaw = [cityOnly, countryOnly].filter(Boolean).join(', ') || 'Somewhere';
+    const displayName = name || 'Anonymous';
+    const dateStr = new Date(createdAt || Date.now())
+      .toLocaleDateString('en-US', { day:'numeric', month:'short', year:'numeric' });
+
+    const note = document.createElement('div');
+    note.className = isNew ? 'note new' : 'note';
+    note.dataset.city = cityOnly;
+    note.dataset.country = countryOnly;
+    note.innerHTML = `<p class="quote"><mark class="hl"></mark></p><p class="who"></p>`;
+    note.querySelector('mark').textContent = quote;
+    note.querySelector('.who').textContent = displayName + ' — ' + cityRaw + ' · ' + dateStr;
+    addReactions(note);
+    return note;
+  }
+
+  // ---- load existing post-its from the shared wall on page load ----
+  async function loadNotes(){
+    try{
+      const res = await fetch('/api/notes');
+      if(!res.ok) throw new Error('failed to load');
+      const notes = await res.json();
+      notes.forEach(n=>{
+        const note = buildNoteElement({ ...n, isNew:false });
+        wall.appendChild(note);
+        placeNote(note, false);
+      });
+    }catch(err){
+      showToast("Couldn't load the wall — refresh to try again.");
+    }
+  }
+
+  // ---- publish ----
+  publishBtn.addEventListener('click', async ()=>{
+    const quote = inQuote.value.trim();
+    if(!quote){
+      setQuoteError('Write something first — even one word or an emoji.');
+      inQuote.focus();
+      return;
+    }
+    if(isBlocked(quote)){
+      setQuoteError("That doesn't look like it belongs on this wall. Try something else.");
+      inQuote.focus();
+      return;
+    }
+    setQuoteError(null);
+
+    const name = document.getElementById('inName').value.trim();
+    const cityRaw = document.getElementById('inCity').value.trim();
+    const [cityOnly, countryOnly] = cityRaw.includes(',')
+      ? cityRaw.split(',').map(s=>s.trim())
+      : [cityRaw, ''];
+
+    publishBtn.disabled = true;
+    publishBtn.textContent = 'Pinning…';
+
+    try{
+      const res = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quote, name, city: cityOnly, country: countryOnly })
+      });
+      if(!res.ok){
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.error || 'Request failed');
+      }
+      const saved = await res.json();
+
+      const note = buildNoteElement({ ...saved, isNew:true });
+      wall.appendChild(note);
+      placeNote(note, true);
+      showToast('Post-it pinned to the wall ✓');
+
+      document.getElementById('inName').value = '';
+      document.getElementById('inCity').value = '';
+      inQuote.value = '';
+      charCount.textContent = '0';
+      overlay.classList.remove('show');
+    }catch(err){
+      setQuoteError("Couldn't save your post-it — check your connection and try again.");
+    }finally{
+      publishBtn.disabled = false;
+      publishBtn.textContent = 'Pin to the wall';
+    }
+  });
+
+  loadNotes();
+</script>
+
+</body>
+</html>
