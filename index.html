@@ -37,7 +37,10 @@
   *{box-sizing:border-box;}
   html,body{
     margin:0;
-    overflow-x:hidden;
+    /* let the page scroll both ways — post-its can land outside the
+       viewport on small screens, and clipping them (rather than letting
+       people scroll to reach them) would make them permanently invisible */
+    overflow-x:auto;
   }
   body{
     font-family:'Inter',sans-serif;
@@ -617,27 +620,22 @@
   const PX_PER_CM = 37.795;
   const GAP_CM = 0;
   const SPIRAL_SPACING = 95 + GAP_CM * PX_PER_CM; // ~95px between successive post-its
+  const WALL_PAD = 40;
 
-  function sizeWall(){
-    const header = document.querySelector('.topbar');
-    const headerH = header ? header.offsetHeight : 80;
-    const h = Math.max(window.innerHeight - headerH, 560);
-    wall.style.height = h + 'px';
-  }
-
+  // positions are computed around a fixed virtual origin (0,0) — never
+  // relative to the wall's current on-screen size. That decouples "where
+  // a post-it sits in the spiral" from "how big the page is", which is
+  // what lets layoutWall() below shift everything into view afterwards.
   function spiralPosition(index, noteW, noteH){
-    const wallW = wall.clientWidth;
-    const wallH = wall.clientHeight || wall.offsetHeight || 700;
-    const centerX = wallW / 2, centerY = wallH / 2;
     const radius = SPIRAL_SPACING * Math.sqrt(index + 0.5);
     const angle = index * GOLDEN_ANGLE;
     return {
-      left: centerX + radius * Math.cos(angle) - noteW / 2,
-      top: centerY + radius * Math.sin(angle) - noteH / 2
+      left: radius * Math.cos(angle) - noteW / 2,
+      top: radius * Math.sin(angle) - noteH / 2
     };
   }
 
-  function placeNote(note, isNew){
+  function placeNote(note){
     const index = noteCounter++;
     note.dataset.spiralIndex = index;
     if(note.dataset.jitterX === undefined){
@@ -645,10 +643,9 @@
       note.dataset.jitterY = (Math.random()*24 - 12).toFixed(1);
       note.dataset.rot = (Math.random()*16 - 8).toFixed(1);
     }
-    applyPosition(note);
-    // enable smooth left/top transitions only after the first placement,
-    // so notes don't fly in from a corner on first paint — but do glide
-    // into their new spot on later reflows (new post-it added, resize)
+    // enable smooth left/top transitions only after the first paint, so
+    // notes don't fly in from a corner on first load — but do glide into
+    // their new spot on later reflows (new post-it added, resize)
     requestAnimationFrame(()=> note.classList.add('settled'));
     const z = 10 + index;
     note.style.zIndex = z;
@@ -671,7 +668,9 @@
       clearTimeout(note._settleTimer);
       note._settleTimer = setTimeout(sendToBack, 3000);
     });
+  }
 
+  function assignColorFor(note){
     const nW = note.offsetWidth || NOTE_W_REF, nH = note.offsetHeight || NOTE_H_REF;
     const left = parseFloat(note.style.left), top = parseFloat(note.style.top);
     const threshold = Math.max(nW, NOTE_W_REF) * 0.9;
@@ -679,28 +678,60 @@
     assignColor(note, left, top, nW, nH, wall._placed, threshold);
   }
 
-  function applyPosition(note){
-    const index = parseInt(note.dataset.spiralIndex, 10);
-    const nW = note.offsetWidth || NOTE_W_REF, nH = note.offsetHeight || NOTE_H_REF;
-    const pos = spiralPosition(index, nW, nH);
-    const left = pos.left + parseFloat(note.dataset.jitterX);
-    const top = pos.top + parseFloat(note.dataset.jitterY);
-    note.style.left = Math.round(left) + 'px';
-    note.style.top = Math.round(top) + 'px';
-    note.dataset.baseTransform = `rotate(${note.dataset.rot}deg)`;
-    note.style.transform = note.dataset.baseTransform;
+  // sizes the wall to fit every post-it (however far the spiral has
+  // spread them) and shifts them all into positive coordinates, so
+  // nothing ever sits off-screen with no way to scroll to it — the wall
+  // simply grows, in whichever direction is needed, as post-its are added
+  function layoutWall(){
+    const header = document.querySelector('.topbar');
+    const headerH = header ? header.offsetHeight : 80;
+    const viewportW = window.innerWidth;
+    const viewportH = Math.max(window.innerHeight - headerH, 560);
+
+    const notes = Array.from(wall.querySelectorAll('.note'));
+    if(notes.length === 0){
+      wall.style.width = viewportW + 'px';
+      wall.style.height = viewportH + 'px';
+      return;
+    }
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const raw = notes.map(note=>{
+      const index = parseInt(note.dataset.spiralIndex, 10);
+      const nW = note.offsetWidth || NOTE_W_REF, nH = note.offsetHeight || NOTE_H_REF;
+      const pos = spiralPosition(index, nW, nH);
+      const left = pos.left + parseFloat(note.dataset.jitterX);
+      const top = pos.top + parseFloat(note.dataset.jitterY);
+      minX = Math.min(minX, left); minY = Math.min(minY, top);
+      maxX = Math.max(maxX, left + nW); maxY = Math.max(maxY, top + nH);
+      return { note, left, top };
+    });
+
+    const contentW = (maxX - minX) + WALL_PAD * 2;
+    const contentH = (maxY - minY) + WALL_PAD * 2;
+    const wallW = Math.max(contentW, viewportW);
+    const wallH = Math.max(contentH, viewportH);
+    // if the spiral is smaller than the viewport, center it instead of
+    // pinning it to the top-left corner
+    const offsetX = minX - WALL_PAD - Math.max(0, (wallW - contentW) / 2);
+    const offsetY = minY - WALL_PAD - Math.max(0, (wallH - contentH) / 2);
+
+    wall.style.width = Math.round(wallW) + 'px';
+    wall.style.height = Math.round(wallH) + 'px';
+
+    raw.forEach(({note, left, top})=>{
+      note.style.left = Math.round(left - offsetX) + 'px';
+      note.style.top = Math.round(top - offsetY) + 'px';
+      note.dataset.baseTransform = `rotate(${note.dataset.rot}deg)`;
+      note.style.transform = note.dataset.baseTransform;
+    });
   }
 
-  function repositionAll(){
-    sizeWall();
-    Array.from(wall.querySelectorAll('.note')).forEach(applyPosition);
-  }
-
-  sizeWall();
+  layoutWall();
   // mobile browsers fire 'resize' constantly as the address bar shows/hides
-  // while scrolling — only reposition on a real size change (rotation,
-  // window resize), not those small height wobbles, so post-its don't
-  // jump around while someone is just scrolling
+  // while scrolling — only reflow on a real size change (rotation, window
+  // resize), not those small height wobbles, so post-its don't jump
+  // around while someone is just scrolling
   let lastW = window.innerWidth, lastH = window.innerHeight;
   window.addEventListener('resize', ()=>{
     clearTimeout(window._rt);
@@ -709,7 +740,7 @@
       const hChanged = Math.abs(window.innerHeight - lastH) > 150;
       if(wChanged || hChanged){
         lastW = window.innerWidth; lastH = window.innerHeight;
-        repositionAll();
+        layoutWall();
       }
     }, 200);
   });
@@ -816,8 +847,10 @@
       notes.forEach(n=>{
         const note = buildNoteElement({ ...n, isNew:false });
         wall.appendChild(note);
-        placeNote(note, false);
+        placeNote(note);
       });
+      layoutWall();
+      Array.from(wall.querySelectorAll('.note')).forEach(assignColorFor);
     }catch(err){
       showToast("Couldn't load the wall — refresh to try again.");
     }
@@ -861,7 +894,9 @@
 
       const note = buildNoteElement({ ...saved, isNew:true });
       wall.appendChild(note);
-      placeNote(note, true);
+      placeNote(note);
+      layoutWall();
+      assignColorFor(note);
       showToast('Post-it pinned to the wall ✓');
 
       document.getElementById('inName').value = '';
