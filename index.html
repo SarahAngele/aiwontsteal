@@ -123,6 +123,7 @@
     background:rgba(0,0,0,0.06);
   }
   .note.hovered{box-shadow:0 12px 26px rgba(0,0,0,0.25);}
+  .note.settled{ transition:box-shadow .15s ease, left .45s ease, top .45s ease; }
   @media(max-width:900px){ .note{width:170px;} }
   @media(max-width:600px){ .note{width:150px; padding:14px 12px 10px;} }
   @media(max-width:360px){ .note{width:130px; padding:12px 10px 8px;} }
@@ -604,12 +605,18 @@
     note.appendChild(bar);
   }
 
-  // ---- sunflower spiral placement: first post-it at the center, each new
-  // one lands a bit further out at the golden angle, so the wall fills
-  // evenly outward before a new denser "layer" restarts from the center ----
+  // ---- sunflower spiral placement: first post-it near the center, each
+  // new one lands further out at the golden angle. Spacing is a fixed
+  // distance-per-post-it (not tied to wall size or note count), so the
+  // gap between post-its stays consistent whether there are 3 or 300 —
+  // validated visually at 0cm of extra gap (post-its lightly touching,
+  // never hiding each other's text) ----
   const GOLDEN_ANGLE = 2.399963;
   let noteCounter = 0;
   const NOTE_W_REF = 190, NOTE_H_REF = 160;
+  const PX_PER_CM = 37.795;
+  const GAP_CM = 0;
+  const SPIRAL_SPACING = 95 + GAP_CM * PX_PER_CM; // ~95px between successive post-its
 
   function sizeWall(){
     const header = document.querySelector('.topbar');
@@ -618,21 +625,11 @@
     wall.style.height = h + 'px';
   }
 
-  function layerSizeFor(wallW, wallH){
-    const maxRadius = Math.min(wallW, wallH) / 2 * 0.92;
-    const area = Math.PI * maxRadius * maxRadius;
-    const noteArea = NOTE_W_REF * NOTE_H_REF * 0.55;
-    return Math.max(10, Math.floor(area / noteArea));
-  }
-
   function spiralPosition(index, noteW, noteH){
     const wallW = wall.clientWidth;
     const wallH = wall.clientHeight || wall.offsetHeight || 700;
     const centerX = wallW / 2, centerY = wallH / 2;
-    const maxRadius = Math.min(wallW, wallH) / 2 * 0.92;
-    const layerSize = layerSizeFor(wallW, wallH);
-    const posInLayer = index % layerSize;
-    const radius = maxRadius * Math.sqrt((posInLayer + 1) / layerSize);
+    const radius = SPIRAL_SPACING * Math.sqrt(index + 0.5);
     const angle = index * GOLDEN_ANGLE;
     return {
       left: centerX + radius * Math.cos(angle) - noteW / 2,
@@ -649,6 +646,10 @@
       note.dataset.rot = (Math.random()*16 - 8).toFixed(1);
     }
     applyPosition(note);
+    // enable smooth left/top transitions only after the first placement,
+    // so notes don't fly in from a corner on first paint — but do glide
+    // into their new spot on later reflows (new post-it added, resize)
+    requestAnimationFrame(()=> note.classList.add('settled'));
     const z = 10 + index;
     note.style.zIndex = z;
     const bringToFront = ()=>{
